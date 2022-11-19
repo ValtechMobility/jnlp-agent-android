@@ -20,7 +20,12 @@ RUN apt-get update && apt-get install -y \
     rsync \
     wget \
     gradle \
-    maven
+    maven \
+    python3 \
+    python3-pip \
+    python3-venv
+
+RUN pip3 install mkdocs
 
 # Dependencies to execute Android builds
 RUN apt-get update -qq
