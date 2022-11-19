@@ -11,7 +11,7 @@ USER root
 
 COPY --from=jnlp /usr/local/bin/jenkins-agent /usr/local/bin/jenkins-agent
 
-RUN chmod +x /usr/local/bin/jenkins-agent &&\
+RUN chmod +x /usr/local/bin/jenkins-agent && \
     ln -s /usr/local/bin/jenkins-agent /usr/local/bin/jenkins-slave
 
 RUN apt-get update && apt-get install -y \
@@ -25,7 +25,6 @@ RUN apt-get update && apt-get install -y \
 # Dependencies to execute Android builds
 RUN apt-get update -qq
 RUN dpkg --add-architecture i386 && apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
-    openjdk-11-jdk \
     libc6:i386 \
     libgcc1:i386 \
     libncurses5:i386 \
@@ -54,14 +53,10 @@ RUN sdkmanager --install "ndk;25.1.8937393" "cmake;3.22.1"
 
 # Please keep all sections in descending order!
 # list all platforms, sort them in descending order, take the newest 8 versions and install them
-RUN yes | sdkmanager $( sdkmanager  --list 2>/dev/null| grep platforms | awk -F' ' '{print $1}' | sort -nr -k2 -t- | head -4 )
+RUN yes | sdkmanager $( sdkmanager --list 2>/dev/null| grep platforms | awk -F' ' '{print $1}' | sort -nr -k2 -t- | head -8 | uniq )
 # list all build-tools, sort them in descending order and install them
-RUN yes | sdkmanager $( sdkmanager  --list 2>/dev/null| grep build-tools | awk -F' ' '{print $1}' | sort -nr -k2 -t\; | uniq )
+RUN yes | sdkmanager $( sdkmanager --list 2>/dev/null| grep build-tools | awk -F' ' '{print $1}' | sort -nr -k2 -t\; | head -6 | uniq )
 RUN yes | sdkmanager \
-    "platforms;android-32" \
-    "platforms;android-31" \
-    "platforms;android-30" \
-    "build-tools;30.0.3" \
     "extras;android;m2repository" \
     "extras;google;m2repository"
 
