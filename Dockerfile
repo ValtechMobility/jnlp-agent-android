@@ -29,6 +29,16 @@ RUN pip3 install mkdocs
 # backstage compat
 RUN pip3 install mkdocs-techdocs-core
 
+# plantuml
+ENV PLANTUML_VERSION=1.2023.2
+RUN apt-get update && apt-get install -y \
+    graphviz \
+    fontconfig
+RUN wget "https://github.com/plantuml/plantuml/releases/download/v${PLANTUML_VERSION}/plantuml-${PLANTUML_VERSION}.jar" -O plantuml.jar
+RUN cp plantuml.jar /usr/local/bin/plantuml.jar
+RUN echo "#!/usr/bin/env bash\n\njava -Djava.awt.headless=true -jar /usr/local/bin/plantuml.jar -stdrpt:1 \$@" | tee -a /usr/local/bin/plantuml
+RUN chmod +x /usr/local/bin/plantuml.jar && chmod +x /usr/local/bin/plantuml
+
 # Dependencies to execute Android builds
 RUN apt-get update -qq
 RUN dpkg --add-architecture i386 && apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
