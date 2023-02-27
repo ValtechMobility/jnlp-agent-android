@@ -26,6 +26,7 @@ RUN apt-get update && apt-get install -y \
     python3-venv
 
 RUN pip3 install mkdocs
+RUN pip3 install mkdocs-techdocs-core
 
 # Dependencies to execute Android builds
 RUN apt-get update -qq
