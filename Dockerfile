@@ -54,6 +54,8 @@ ENV ANDROID_HOME /opt/sdk
 ENV ANDROID_SDK_ROOT /opt/sdk
 
 RUN mkdir -p ${ANDROID_SDK_ROOT}
+RUN chmod -Rf 777 ${ANDROID_SDK_ROOT}
+RUN chown -Rf 1000:1000 ${ANDROID_SDK_ROOT}
 RUN cd ${ANDROID_SDK_ROOT} && wget https://dl.google.com/android/repository/commandlinetools-linux-8512546_latest.zip -O sdk-tools.zip
 RUN cd ${ANDROID_SDK_ROOT} && mkdir tmp && unzip sdk-tools.zip -d tmp && rm sdk-tools.zip
 RUN cd ${ANDROID_SDK_ROOT} && mkdir -p cmdline-tools/latest && mv tmp/cmdline-tools/* cmdline-tools/latest
