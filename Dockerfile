@@ -29,6 +29,12 @@ RUN pip3 install mkdocs
 # backstage compat
 RUN pip3 install mkdocs-techdocs-core
 
+#simplify doc generation, https://github.com/lukasgeiter/mkdocs-awesome-pages-plugin
+RUN pip3 install mkdocs-awesome-pages-plugin
+
+#showing date created and updated on every page, https://github.com/timvink/mkdocs-git-revision-date-localized-plugin
+RUN pip3 install mkdocs-git-revision-date-localized-plugin
+
 # plantuml
 ENV PLANTUML_VERSION=1.2023.2
 RUN apt-get update && apt-get install -y \
