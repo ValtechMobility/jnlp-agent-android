@@ -23,7 +23,8 @@ RUN apt-get update && apt-get install -y \
     maven \
     python3 \
     python3-pip \
-    python3-venv
+    python3-venv \
+    git
 
 RUN pip3 install mkdocs
 # backstage compat
