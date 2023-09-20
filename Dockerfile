@@ -24,7 +24,8 @@ RUN apt-get update && apt-get install -y \
     python3 \
     python3-pip \
     python3-venv \
-    git
+    git \
+    tar
 
 RUN pip3 install mkdocs
 # backstage compat
@@ -45,6 +46,12 @@ RUN wget "https://github.com/plantuml/plantuml/releases/download/v${PLANTUML_VER
 RUN cp plantuml.jar /usr/local/bin/plantuml.jar
 RUN echo "#!/usr/bin/env bash\n\njava -Djava.awt.headless=true -jar /usr/local/bin/plantuml.jar -stdrpt:1 \$@" | tee -a /usr/local/bin/plantuml
 RUN chmod +x /usr/local/bin/plantuml.jar && chmod +x /usr/local/bin/plantuml
+
+# GitVersion
+RUN wget https://github.com/GitTools/GitVersion/releases/download/5.12.0/gitversion-linux-x64-5.12.0.tar.gz
+RUN tar -xvf gitversion-linux-x64-5.12.0.tar.gz
+RUN mv gitversion /usr/local/bin
+RUN chmod +x /usr/local/bin/gitversion
 
 # Dependencies to execute Android builds
 RUN apt-get update -qq
