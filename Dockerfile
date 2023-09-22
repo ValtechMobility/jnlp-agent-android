@@ -14,6 +14,9 @@ COPY --from=jnlp /usr/local/bin/jenkins-agent /usr/local/bin/jenkins-agent
 RUN chmod +x /usr/local/bin/jenkins-agent && \
     ln -s /usr/local/bin/jenkins-agent /usr/local/bin/jenkins-slave
 
+# For maven install issue -> "error: error creating symbolic link '/usr/share/man/man1/mvn.1.gz.dpkg-tmp': No such file or directory"
+RUN mkdir -p /usr/share/man/man1
+
 RUN apt-get update && apt-get install -y \
     unzip \
     curl \
