@@ -30,6 +30,9 @@ RUN apt-get update && apt-get install -y \
     git \
     tar
 
+# "fix" pips -> error: externally-managed-environment
+ENV PIP_BREAK_SYSTEM_PACKAGES 1
+
 RUN pip3 install mkdocs
 # backstage compat
 RUN pip3 install mkdocs-techdocs-core
