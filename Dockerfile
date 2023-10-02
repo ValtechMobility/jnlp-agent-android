@@ -1,5 +1,7 @@
 FROM jenkins/inbound-agent:alpine as jnlp
 
+FROM jenkins/agent:latest-jdk11
+
 ARG version
 LABEL Description="This is a base image, which allows connecting Jenkins agents via JNLP protocols" Vendor="Jenkins project" Version="$version"
 
