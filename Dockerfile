@@ -1,7 +1,5 @@
 FROM jenkins/inbound-agent:alpine as jnlp
 
-FROM jenkins/agent:latest-jdk11
-
 ARG version
 LABEL Description="This is a base image, which allows connecting Jenkins agents via JNLP protocols" Vendor="Jenkins project" Version="$version"
 
@@ -14,53 +12,66 @@ COPY --from=jnlp /usr/local/bin/jenkins-agent /usr/local/bin/jenkins-agent
 RUN chmod +x /usr/local/bin/jenkins-agent && \
     ln -s /usr/local/bin/jenkins-agent /usr/local/bin/jenkins-slave
 
+# FYI reduce RUN calls -> minimize image sizes, avoid creating layers with unnecessary cached files
+
+RUN apt-get update && \
+    apt-get upgrade -y && \
+    apt-get install -y --no-install-recommends curl gcc g++ gnupg unixodbc-dev openssl git && \
+    apt-get install -y software-properties-common ca-certificates && \
+    apt-get install -y build-essential zlib1g-dev libncurses5-dev libgdbm-dev libssl-dev libreadline-dev libffi-dev wget libbz2-dev libsqlite3-dev && \
+    update-ca-certificates
+
 # For maven install issue -> "error: error creating symbolic link '/usr/share/man/man1/mvn.1.gz.dpkg-tmp': No such file or directory"
 RUN mkdir -p /usr/share/man/man1
 
-RUN apt-get update && apt-get install -y \
-    unzip \
-    curl \
+RUN apt-get install -y \
     rsync \
-    wget \
+    unzip \
+    tar \
     gradle \
-    maven \
-    python3 \
-    python3-pip \
-    python3-venv \
-    git \
-    tar
+    maven
 
-# "fix" pips -> error: externally-managed-environment
-ENV PIP_BREAK_SYSTEM_PACKAGES 1
+# python
+ENV PY_VERSION=3.9.18
+RUN mkdir /python && cd /python && \
+    wget "https://www.python.org/ftp/python/${PY_VERSION}/Python-${PY_VERSION}.tgz" && \
+    tar -zxvf "Python-${PY_VERSION}.tgz" && \
+    cd "Python-${PY_VERSION}" && \
+    ls -lhR && \
+    ./configure --enable-optimizations && \
+    make install && \
+    rm -rf /python
 
-RUN pip3 install mkdocs
-# backstage compat
-RUN pip3 install mkdocs-techdocs-core
-
-#simplify doc generation, https://github.com/lukasgeiter/mkdocs-awesome-pages-plugin
-RUN pip3 install mkdocs-awesome-pages-plugin
-
-#showing date created and updated on every page, https://github.com/timvink/mkdocs-git-revision-date-localized-plugin
-RUN pip3 install mkdocs-git-revision-date-localized-plugin
+# mkdocs
+# mkdocs-techdocs-core - backstage compat
+# simplify doc generation, https://github.com/lukasgeiter/mkdocs-awesome-pages-plugin
+# showing date created and updated on every page, https://github.com/timvink/mkdocs-git-revision-date-localized-plugin
+RUN pip3 install \
+    mkdocs \
+    mkdocs-techdocs-core \
+    mkdocs-awesome-pages-plugin \
+    mkdocs-git-revision-date-localized-plugin
 
 # plantuml
 ENV PLANTUML_VERSION=1.2023.2
-RUN apt-get update && apt-get install -y \
+RUN apt-get install -y \
     graphviz \
     fontconfig
-RUN wget "https://github.com/plantuml/plantuml/releases/download/v${PLANTUML_VERSION}/plantuml-${PLANTUML_VERSION}.jar" -O plantuml.jar
-RUN cp plantuml.jar /usr/local/bin/plantuml.jar
-RUN echo "#!/usr/bin/env bash\n\njava -Djava.awt.headless=true -jar /usr/local/bin/plantuml.jar -stdrpt:1 \$@" | tee -a /usr/local/bin/plantuml
-RUN chmod +x /usr/local/bin/plantuml.jar && chmod +x /usr/local/bin/plantuml
+RUN wget "https://github.com/plantuml/plantuml/releases/download/v${PLANTUML_VERSION}/plantuml-${PLANTUML_VERSION}.jar" -O plantuml.jar && \
+    cp plantuml.jar /usr/local/bin/plantuml.jar && \
+    echo "#!/usr/bin/env bash\n\njava -Djava.awt.headless=true -jar /usr/local/bin/plantuml.jar -stdrpt:1 \$@" | tee -a /usr/local/bin/plantuml && \
+    chmod +x /usr/local/bin/plantuml.jar && \
+    chmod +x /usr/local/bin/plantuml
 
 # GitVersion
-RUN wget https://github.com/GitTools/GitVersion/releases/download/5.12.0/gitversion-linux-x64-5.12.0.tar.gz
-RUN tar -xvf gitversion-linux-x64-5.12.0.tar.gz
-RUN mv gitversion /usr/local/bin
-RUN chmod +x /usr/local/bin/gitversion
+ENV GIT_VERSION=5.12.0
+RUN wget "https://github.com/GitTools/GitVersion/releases/download/${GIT_VERSION}/gitversion-linux-x64-${GIT_VERSION}.tar.gz" && \
+    tar -xvf "gitversion-linux-x64-${GIT_VERSION}.tar.gz" && \
+    mv gitversion /usr/local/bin && \
+    chmod +x /usr/local/bin/gitversion && \
+    rm "gitversion-linux-x64-${GIT_VERSION}.tar.gz"
 
 # Dependencies to execute Android builds
-RUN apt-get update -qq
 RUN dpkg --add-architecture i386 && apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
     libc6:i386 \
     libgcc1:i386 \
@@ -73,12 +84,16 @@ SHELL ["/bin/bash", "-c"]
 ENV ANDROID_HOME /opt/sdk
 ENV ANDROID_SDK_ROOT /opt/sdk
 
-RUN mkdir -p ${ANDROID_SDK_ROOT}
-RUN chmod -Rf 777 ${ANDROID_SDK_ROOT}
-RUN chown -Rf 1000:1000 ${ANDROID_SDK_ROOT}
-RUN cd ${ANDROID_SDK_ROOT} && wget https://dl.google.com/android/repository/commandlinetools-linux-8512546_latest.zip -O sdk-tools.zip
-RUN cd ${ANDROID_SDK_ROOT} && mkdir tmp && unzip sdk-tools.zip -d tmp && rm sdk-tools.zip
-RUN cd ${ANDROID_SDK_ROOT} && mkdir -p cmdline-tools/latest && mv tmp/cmdline-tools/* cmdline-tools/latest
+RUN mkdir -p ${ANDROID_SDK_ROOT} && \
+    chmod -Rf 777 ${ANDROID_SDK_ROOT} && \
+    chown -Rf 1000:1000 ${ANDROID_SDK_ROOT} && \
+    cd ${ANDROID_SDK_ROOT} && \
+    wget https://dl.google.com/android/repository/commandlinetools-linux-8512546_latest.zip -O sdk-tools.zip && \
+    mkdir tmp && \
+    unzip sdk-tools.zip -d tmp && \
+    rm sdk-tools.zip && \
+    mkdir -p cmdline-tools/latest && \
+    mv tmp/cmdline-tools/* cmdline-tools/latest
 
 ENV PATH ${PATH}:${ANDROID_SDK_ROOT}/platform-tools:${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin
 
